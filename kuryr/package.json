@@ -1,0 +1,16 @@
+{
+  "name": "kuryr",
+  "version": "1.0.0",
+  "description": "Courier server – accepts delivery orders from the restaurant",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test-order": "node test-order.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
