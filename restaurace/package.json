@@ -1,0 +1,17 @@
+{
+  "name": "restaurace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Server restaurace a klient kurýrního API",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test-order": "node test-order.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^5.1.0"
+  }
+}
