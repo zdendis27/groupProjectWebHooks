@@ -14,7 +14,9 @@ npm start
 
 Server vypíše `Restaurant runs on http://localhost:3001`.
 Port lze změnit proměnnou prostředí `PORT`.
-Endpoint `/update` a zpracování stavů objednávky budou doplněny v dalších úlohách.
+Server přijímá webhooky od kurýra na `POST /update` (tělo `{ "id": "...", "status": "..." }`),
+ukládá stav každé objednávky do objektu `orders` a odpovídá `200`.
+Aktuální stavy všech objednávek ukazuje `GET /orders` (v prohlížeči `http://localhost:3001/orders`).
 
 ## Odeslání objednávky
 
@@ -37,8 +39,7 @@ npm run test-order -- objednavka1
 Při úspěchu vypíše `Courier response: 202`. Tělo odpovědi nečte.
 Při nedostupnosti kurýra, překročení 10 sekund nebo jiném HTTP statusu
 vypíše chybu a skončí s návratovým kódem 1.
-Skript lze pro tuto úlohu spustit i bez běžícího serveru restaurace,
-protože kurýr zatím webhook nevolá.
+Server restaurace musí běžet, jinak kurýr nebude mít kam posílat stavy objednávky.
 
 ## Komunikace mezi dvěma počítači
 
