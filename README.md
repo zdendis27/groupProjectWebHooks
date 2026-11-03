@@ -93,7 +93,6 @@ curl -X POST http://localhost:3000/order \
 | `npm start` | Spustí kurýrní server (port 3000) |
 | `npm run test-order` | Pošle 1 testovací objednávku |
 | `npm run test-order -- 3` | Pošle 3 objednávky najednou (test souběžného zpracování) |
-| `npm run mock-restaurant` | Spustí zjednodušenou restauraci na portu 3001 s `POST /update` a `GET /orders`. Slouží jen k tomu, aby kurýr mohl testovat bez týmu restaurace. |
 
 ---
 

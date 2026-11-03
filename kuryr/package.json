@@ -5,8 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test-order": "node test-order.js",
-    "mock-restaurant": "node mock-restaurant.js"
+    "test-order": "node test-order.js"
   },
   "keywords": [],
   "author": "",
