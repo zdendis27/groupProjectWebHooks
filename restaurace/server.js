@@ -4,6 +4,7 @@ const app = express();
 const port = process.env.PORT || 3001;
 
 app.use(express.json());
+app.use(express.static('public'));  // serves public/index.html at http://localhost:3001/
 
 const orders = {};  // jednoduché úložiště stavů objednávek
 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="UTF-8">
+  <title>Restaurace – stav objednávek</title>
+  <style>
+    body { font-family: sans-serif; margin: 40px; }
+    table { border-collapse: collapse; }
+    th, td { border: 1px solid #ccc; padding: 8px 16px; text-align: left; }
+    th { background: #eee; }
+  </style>
+</head>
+<body>
+  <h1>Stav objednávek</h1>
+
+  <table>
+    <thead>
+      <tr><th>Objednávka</th><th>Stav</th></tr>
+    </thead>
+    <tbody id="orders">
+      <tr><td colspan="2">Zatím žádné objednávky</td></tr>
+    </tbody>
+  </table>
+
+  <script>
+    // Polling: ask the server for the current order statuses every second
+    async function loadOrders() {
+      const res = await fetch('/orders');
+      const orders = await res.json();  // e.g. { "obj1": "Rozváží se" }
+
+      const rows = Object.entries(orders)
+        .map(([id, status]) => `<tr><td>${id}</td><td>${status}</td></tr>`)
+        .join('');
+
+      document.getElementById('orders').innerHTML =
+        rows || '<tr><td colspan="2">Zatím žádné objednávky</td></tr>';
+    }
+
+    loadOrders();
+    setInterval(loadOrders, 1000);
+  </script>
+</body>
+</html>

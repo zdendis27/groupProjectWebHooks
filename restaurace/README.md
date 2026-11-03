@@ -18,6 +18,11 @@ Server přijímá webhooky od kurýra na `POST /update` (tělo `{ "id": "...", "
 ukládá stav každé objednávky do objektu `orders` a odpovídá `200`.
 Aktuální stavy všech objednávek ukazuje `GET /orders` (v prohlížeči `http://localhost:3001/orders`).
 
+## Stránka se stavem objednávek
+
+Na `http://localhost:3001/` je stránka (`public/index.html`) s tabulkou objednávek a jejich stavů.
+Stránka se každou sekundu ptá serveru na `GET /orders` (polling), takže se stavy mění samy bez obnovování.
+
 ## Odeslání objednávky
 
 Kurýrní server musí běžet na `http://localhost:3000` (spouští jej tým kurýra).
