@@ -60,7 +60,8 @@ Příklad:
 
 | Status | Význam |
 |---|---|
-| `202 Accepted` | Objednávka převzata k dalšímu zpracování. Tělo odpovědi neobsahuje žádná data (je v něm jen text `Accepted`). |
+| `202 Accepted` | Objednávka převzata k dalšímu zpracování. Tělo odpovědi neobsahuje žádná data (je v něm jen text `Accepted`). Změny stavu pak přijdou přes webhook. |
+| `400 Bad Request` | Chybí `id` nebo `callbackUrl`. Tělo: `{ "error": "..." }` |
 
 ### Ukázka volání z restaurace (Node.js 18+)
 
@@ -85,20 +86,48 @@ curl -X POST http://localhost:3000/order \
   -d '{"id":"objednavka1","callbackUrl":"http://localhost:3001/update"}' -i
 ```
 
-Ve složce `kuryr/` je i skript `test-order.js`, který pošle testovací objednávku: `node test-order.js`.
+### Testovací skripty kurýra (složka `kuryr/`)
+
+| Příkaz | Co dělá |
+|---|---|
+| `npm start` | Spustí kurýrní server (port 3000) |
+| `npm run test-order` | Pošle 1 testovací objednávku |
+| `npm run test-order -- 3` | Pošle 3 objednávky najednou (test souběžného zpracování) |
+| `npm run mock-restaurant` | Spustí zjednodušenou restauraci na portu 3001 s `POST /update` a `GET /orders`. Slouží jen k tomu, aby kurýr mohl testovat bez týmu restaurace. |
 
 ---
 
-## Webhook – co bude kurýr posílat restauraci (další úlohy)
+## Webhook – stavy objednávky (kurýr → restaurace)
 
-Kurýr bude na `callbackUrl` posílat informace o tom, jak se mění stav objednávky. Stav projde postupně těmito hodnotami:
+Po přijetí objednávky kurýr ihned odpoví `202` a pak sám postupně volá `callbackUrl` restaurace.
 
-1. **Žádost o objednávku**
-2. **Restaurace připravuje**
-3. **Rozváží se**
-4. **Doručeno**
+**Metoda:** `POST` na `callbackUrl` z objednávky (např. `http://localhost:3001/update`)
 
-> 🚧 Zatím není implementováno. Přesný formát zprávy pro webhook (název pole se stavem, metoda POST apod.) tady doplníme, až se na něm domluvíme. Restaurace si má připravit endpoint na adrese, kterou posílá v `callbackUrl` (např. `POST /update` na portu 3001).
+**Hlavička:** `Content-Type: application/json`
+
+**Tělo (JSON):**
+
+| Pole | Typ | Popis |
+|---|---|---|
+| `id` | string | `id` objednávky, jak ho restaurace poslala |
+| `status` | string | Nový stav objednávky (přesně jeden z textů níže, včetně diakritiky) |
+
+```json
+{ "id": "objednavka1", "status": "Rozváží se" }
+```
+
+**Stavy a časování:**
+
+| Čas od přijetí | `status` |
+|---|---|
+| ihned (stav samotné žádosti, webhook se neposílá) | `Žádost o objednávku` |
+| 5 s | `Restaurace připravuje` |
+| 10 s | `Rozváží se` |
+| 15 s | `Doručeno` |
+
+**Očekávaná odpověď restaurace:** `200 OK`. Kurýr kód odpovědi vypíše do konzole. Když restaurace neodpoví (neběží, špatná adresa), kurýr chybu jen zaloguje a nespadne.
+
+Každá objednávka má vlastní časovače, takže více objednávek najednou se zpracovává souběžně a nezávisle.
 
 ---
 
