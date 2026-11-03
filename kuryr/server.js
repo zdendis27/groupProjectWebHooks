@@ -1,8 +1,12 @@
 const express = require('express');
+const crypto = require('crypto');
 const app = express();
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
+
+// Shared secret for signing webhooks – must be the same on the restaurant side
+const SHARED_SECRET = process.env.SHARED_SECRET || 'tajne-heslo';
 
 // Delivery phases sent to the restaurant's webhook, with delay (ms) after the order was accepted
 const STATUS_STEPS = [
@@ -13,10 +17,16 @@ const STATUS_STEPS = [
 
 // Sends one status update to the restaurant's callbackUrl (webhook)
 function sendStatusUpdate(order, status) {
+  const payload = { id: order.id, status: status };
+  const body = JSON.stringify(payload);
+  const sig = crypto.createHmac('sha256', SHARED_SECRET)
+                    .update(body, 'utf8')
+                    .digest('hex');
+
   fetch(order.callbackUrl, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: order.id, status: status })
+    headers: { 'Content-Type': 'application/json', 'X-Signature': sig },
+    body: body  // send exactly the string that was signed
   })
     .then(res => {
       console.log(`${order.id}: ${status} (restaurace odpověděla ${res.status})`);

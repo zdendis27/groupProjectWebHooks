@@ -102,7 +102,14 @@ Po přijetí objednávky kurýr ihned odpoví `202` a pak sám postupně volá `
 
 **Metoda:** `POST` na `callbackUrl` z objednávky (např. `http://localhost:3001/update`)
 
-**Hlavička:** `Content-Type: application/json`
+**Hlavičky:**
+
+| Hlavička | Hodnota |
+|---|---|
+| `Content-Type` | `application/json` |
+| `X-Signature` | HMAC-SHA256 těla zprávy (přesně odeslaného JSON řetězce v UTF-8) se sdíleným tajemstvím, zapsaný jako hex |
+
+**Sdílené tajemství:** proměnná prostředí `SHARED_SECRET`, výchozí hodnota `tajne-heslo`. Kurýr i restaurace musí mít stejnou hodnotu. Restaurace podpis přepočítá z těla a porovná. Když nesedí nebo chybí, odpoví `401 Unauthorized` a stav neuloží.
 
 **Tělo (JSON):**
 
@@ -124,7 +131,7 @@ Po přijetí objednávky kurýr ihned odpoví `202` a pak sám postupně volá `
 | 10 s | `Rozváží se` |
 | 15 s | `Doručeno` |
 
-**Očekávaná odpověď restaurace:** `200 OK`. Kurýr kód odpovědi vypíše do konzole. Když restaurace neodpoví (neběží, špatná adresa), kurýr chybu jen zaloguje a nespadne.
+**Očekávaná odpověď restaurace:** `200 OK`, při neplatném podpisu `401 Unauthorized`. Kurýr kód odpovědi vypíše do konzole. Když restaurace neodpoví (neběží, špatná adresa), kurýr chybu jen zaloguje a nespadne.
 
 Každá objednávka má vlastní časovače, takže více objednávek najednou se zpracovává souběžně a nezávisle.
 

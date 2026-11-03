@@ -1,15 +1,36 @@
 const express = require('express');
+const crypto = require('crypto');
 
 const app = express();
 const port = process.env.PORT || 3001;
 
-app.use(express.json());
+// Shared secret for verifying webhooks – must be the same on the courier side
+const SHARED_SECRET = process.env.SHARED_SECRET || 'tajne-heslo';
+
+// Parse JSON and also keep the raw body – the signature is computed from the exact bytes received
+app.use(express.json({
+  verify: (req, res, buf) => { req.rawBody = buf; }
+}));
 app.use(express.static('public'));  // serves public/index.html at http://localhost:3001/
 
 const orders = {};  // jednoduché úložiště stavů objednávek
 
 // Webhook endpoint the courier calls with order status updates
 app.post('/update', (req, res) => {
+  const sigHeader = (req.get('X-Signature') || '').trim();
+  const rawBody = req.rawBody || Buffer.from('');
+  const expected = crypto.createHmac('sha256', SHARED_SECRET)
+                         .update(rawBody)
+                         .digest('hex');
+
+  // Timing-safe comparison; buffers must have equal length, otherwise timingSafeEqual throws
+  const a = Buffer.from(sigHeader);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    console.log('Odmítnut webhook s neplatným podpisem');
+    return res.sendStatus(401);
+  }
+
   const { id, status } = req.body;
   orders[id] = status;
   console.log(`Objednávka ${id}: ${status}`);
