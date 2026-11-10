@@ -115,11 +115,12 @@ Po přijetí objednávky kurýr ihned odpoví `202` a pak sám postupně volá `
 
 | Pole | Typ | Popis |
 |---|---|---|
+| `event_id` | string | Unikátní ID této události (UUID). Při opakovaném odeslání (retry) zůstává stejné. |
 | `id` | string | `id` objednávky, jak ho restaurace poslala |
 | `status` | string | Nový stav objednávky (přesně jeden z textů níže, včetně diakritiky) |
 
 ```json
-{ "id": "objednavka1", "status": "Rozváží se" }
+{ "event_id": "6e7e0687-1943-4052-b4df-28daba5704b5", "id": "objednavka1", "status": "Rozváží se" }
 ```
 
 **Stavy a časování:**
@@ -130,6 +131,8 @@ Po přijetí objednávky kurýr ihned odpoví `202` a pak sám postupně volá `
 | 5 s | `Restaurace připravuje` |
 | 10 s | `Rozváží se` |
 | 15 s | `Doručeno` |
+
+**Duplicitní notifikace:** kurýr některé webhooky úmyslně pošle podruhé (simulace retry, se stejným `event_id`, tělem i podpisem). Restaurace si pamatuje zpracovaná `event_id` a duplikát přeskočí: nic znovu neuloží, ale odpoví `200`, aby kurýr věděl, že je doručeno.
 
 **Očekávaná odpověď restaurace:** `200 OK`, při neplatném podpisu `401 Unauthorized`. Kurýr kód odpovědi vypíše do konzole. Když restaurace neodpoví (neběží, špatná adresa), kurýr chybu jen zaloguje a nespadne.
 

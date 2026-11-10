@@ -15,26 +15,40 @@ const STATUS_STEPS = [
   { status: 'Doručeno', delay: 15000 }
 ];
 
-// Sends one status update to the restaurant's callbackUrl (webhook)
-function sendStatusUpdate(order, status) {
-  const payload = { id: order.id, status: status };
-  const body = JSON.stringify(payload);
-  const sig = crypto.createHmac('sha256', SHARED_SECRET)
-                    .update(body, 'utf8')
-                    .digest('hex');
+// Chance that a webhook is sent once more (simulates a retry after a "lost" response)
+const DUPLICATE_CHANCE = 0.5;
 
+// Posts an already signed webhook to the restaurant; label is only for the log
+function postWebhook(order, status, body, sig, label) {
   fetch(order.callbackUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'X-Signature': sig },
     body: body  // send exactly the string that was signed
   })
     .then(res => {
-      console.log(`${order.id}: ${status} (restaurace odpověděla ${res.status})`);
+      console.log(`${order.id}: ${status}${label} (restaurace odpověděla ${res.status})`);
     })
     .catch(err => {
       // Without catch, an unreachable restaurant would crash the whole courier server
       console.error(`${order.id}: stav "${status}" se nepodařilo doručit – ${err.message}`);
     });
+}
+
+// Sends one status update to the restaurant's callbackUrl (webhook)
+function sendStatusUpdate(order, status) {
+  // Every event gets its own unique id; a retry reuses the same id
+  const payload = { event_id: crypto.randomUUID(), id: order.id, status: status };
+  const body = JSON.stringify(payload);
+  const sig = crypto.createHmac('sha256', SHARED_SECRET)
+                    .update(body, 'utf8')
+                    .digest('hex');
+
+  postWebhook(order, status, body, sig, '');
+
+  // Sometimes send the very same event again one second later (same event_id, body and signature)
+  if (Math.random() < DUPLICATE_CHANCE) {
+    setTimeout(() => postWebhook(order, status, body, sig, ' [DUPLIKÁT]'), 1000);
+  }
 }
 
 // Endpoint pro přijetí nové objednávky

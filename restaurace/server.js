@@ -14,6 +14,7 @@ app.use(express.json({
 app.use(express.static('public'));  // serves public/index.html at http://localhost:3001/
 
 const orders = {};  // jednoduché úložiště stavů objednávek
+const processedEvents = new Set();  // event_id of webhooks that were already processed
 
 // Webhook endpoint the courier calls with order status updates
 app.post('/update', (req, res) => {
@@ -31,7 +32,19 @@ app.post('/update', (req, res) => {
     return res.sendStatus(401);
   }
 
-  const { id, status } = req.body;
+  const { event_id, id, status } = req.body;
+
+  if (!event_id) {
+    return res.status(400).json({ error: 'Webhook musí obsahovat event_id' });
+  }
+
+  // Duplicate event: already processed, so skip it but still answer 200 (the courier then stops retrying)
+  if (processedEvents.has(event_id)) {
+    console.log(`Duplicitní událost ${event_id} (${id}: ${status}) – ignorováno`);
+    return res.sendStatus(200);
+  }
+  processedEvents.add(event_id);
+
   orders[id] = status;
   console.log(`Objednávka ${id}: ${status}`);
   res.sendStatus(200);
